@@ -1,2 +1,2 @@
 # bioinformatics
-A file to help answer problem sets on bioinformatics
+Solve bioinformatic problem sets with  Ruby
