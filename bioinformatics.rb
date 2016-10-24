@@ -1,6 +1,8 @@
-class DNA
+module DNA
+	include RNA
+
 	#return number of DNA neucleotides in order of ACGT
-	def self.A_C_G_T(string)
+	def A_C_G_T(string)
 		count = { 	"A" => 0,
 					"C" => 0,
 					"G" => 0,
@@ -12,36 +14,36 @@ class DNA
 	end
 
 	#Return reverse complement of a DNA string
-	def self.complement(string)
+	def complement(string)
 		string.reverse.gsub(/[ATCG]/, "A" => "T", "T" => "A", "C" => "G", "G" =>"C" )
 	end
 
 	#find a DNA stand's transcribed RNA string
-	def self.to_RNA(string)
+	def to_RNA(string)
 		 string.gsub("T", "U")
 	end
 
 	#find's the frequency of 'c' and 'g' in a given string
-	def self.GC_Content(string)
+	def GC_Content(string)
 		gc = string.split("").select { |a| a == "G" or a == "C"}
 		(( gc.length).to_f / (string.strip.length).to_f) * 100 
 	end
 
 	#return the location of every motif within a dna string. First symbol of dna string is location 1.
-	def self.motif_location(string, motif)
+	def motif_location(string, motif)
 		locations = []
 		(0..(string.length - motif.length)).each { |a| string[a...(a+motif.length)] == motif ? locations << (a+1) : next }
 		locations.join(" ")
 	end
 
 	#intron's are segements of a gene not used for translation into protein
-	def self.remove_intron(string, intron)
+	def remove_intron(string, intron)
 		string.gsub(/#{intron}/, "")
 	end
 
 	#hamming distance:  distance between two strings having the same length
 	#is the minimum number of symbol substitutions required to transform one string into the other 
-	def self.hamm(x, y)
+	def hamm(x, y)
 		count = 0
 		(0...x.length).each { |a| x[a] != y[a] ? count += 1 : next}
 		count
@@ -50,7 +52,7 @@ class DNA
 	#transition/transversion ration
 	#transition: point mutation of purine for purine or of a prymadine for another prymadine (a to g) or (c to t)
 	#transversions: substitution of a purine for a prymadine
-	def self.trans_ratio(x, y)
+	def trans_ratio(x, y)
 		itions = 0.0
 		versions = 0.0
 		
@@ -71,7 +73,7 @@ class DNA
 	end
 
 	#return longest common substring for an array of strings
-	def self.longest_common_substring(array_of_strings)
+	def longest_common_substring(array_of_strings)
 		long = 1
 		
 		common = {}
@@ -98,7 +100,7 @@ class DNA
 
 	#return a single collection of indices in which the symbols of the motif appear as a subsequence of  the main string
 	#subsequence is a collection of symbols contained in order(though not necessarily contiguously)
-	def self.spliced_motif_index(main, motif)
+	def spliced_motif_index(main, motif)
 		indices = []
 		starter = 0
 
@@ -111,8 +113,8 @@ class DNA
 
 	#Return every distinct candidate protein string that can be translated from open reading frames of a string
 	#A ORF is a substring which starts from the start codon and ends by a stop codon, without any other stop codons inbetween
-	def self.protein_candidates(data)
-		complements = [DNA.to_RNA(data), DNA.to_RNA(DNA.complement(data))]
+	def protein_candidates(data)
+		complements = [to_RNA(data), to_RNA(complement(data))]
 		candidate_protein = []
 
 		complements.each do |i|
@@ -125,17 +127,17 @@ class DNA
 
 			(0...codons.length).each {|a| codons[a] == "AUG" ? index << a : next}
 
-			index.each {|a|  candidate_protein << RNA.to_protein(i[a..-1])}
+			index.each {|a|  candidate_protein << rna_to_protein(i[a..-1])}
 		end
 
 		candidate_protein.uniq.compact
 	end
 end
 
-class Fasta
+Module Fasta
 
 	#parse through a fasta formatted file
-	def self.parse(fasta_file)
+	def parse(fasta_file)
 		counter = 0
 		matrix = []
 
@@ -153,8 +155,8 @@ class Fasta
 	end
 end
 
-class RNA
-	@codon_table = {
+module RNA
+	Codon_table = {
 	"UUU" => "F", "CUU" => "L", "AUU" => "I", "GUU" => "V",
 	"UUC" => "F", "CUC" => "L", "AUC" => "I", "GUC" => "V",
 	"UUA" => "L", "CUA" => "L", "AUA" => "I", "GUA" => "V",
@@ -174,10 +176,10 @@ class RNA
 	}
 
 	#The total number of different RNA strings from which the protein could have been translated, modulo 1,000,000
-	def self.potential_mRNA_strings(string)
+	def potential_mRNA_strings(string)
 		pot_string = {}
 
-		@codon_table.each do |k, v|
+		Codon_table.each do |k, v|
 			 pot_string.has_key?(v) ? pot_string[v] += 1 : pot_string[v]=1
 		end
 
@@ -187,13 +189,13 @@ class RNA
 	end
 
 	#return the protein string encoded by the RNA string
-	def self.to_protein(string)
+	def rna_to_protein(string)
 		protein = []
 		triplets = string.split("").each_slice(3).to_a.map { |a| a.join }
 		
 		(0...triplets.length).each do |a|
-		 	if (@codon_table[triplets[a-1]] != 'Stop') or (a ==0) 
-		 		protein << @codon_table[triplets[a]] 
+		 	if (Codon_table[triplets[a-1]] != 'Stop') or (a ==0) 
+		 		protein << Codon_table[triplets[a]] 
 		 	else
 		 		break
 		 	end
@@ -205,7 +207,7 @@ class RNA
 		end
 	end
 
-	@mass_table = {
+	Mass_table = {
 		'A'  => 71.03711,
 		'C'  => 103.00919,
 		'D'  => 115.02694,
@@ -229,13 +231,13 @@ class RNA
 	}
 
 	#The total monoisiotopic mass of a protein string
-	def self.monoisotopic_mass(string)
-		answer = string.split("").map {|a| @mass_table[a]}.inject(:+)
+	def monoisotopic_mass(string)
+		answer = string.split("").map {|a| Mass_table[a]}.inject(:+)
 	end
 end
 
-class Tree
-	def self.vertex_edges(array_of_edges)
+module Tree
+	def vertex_edges(array_of_edges)
 		vertex_edges = {}
 		array_of_edges.each do |a|
 			vertex_edges.has_key?(a[0]) ? vertex_edges[a[0]] << a[1] : vertex_edges[a[0]] = [a[1]]
@@ -244,7 +246,7 @@ class Tree
 		vertex_edges
 	end
 
-	def self.leaves(vertex_edges)
+	def leaves(vertex_edges)
 		leaves = []
 		vertex_edges.each do |k,v|
 			if (v.length == 1) and (vertex_edges[k].length >= v.length)
@@ -254,7 +256,7 @@ class Tree
 		leaves
 	end
 
-	def self.prune_leaves(vertex_edges)
+	def prune_leaves(vertex_edges)
 		tree = vertex_edges.clone
 		leaves = leaves(tree)
 		leaves.each do |a|
@@ -266,7 +268,7 @@ class Tree
 		tree
 	end
 
-	def self.single_edge_trees(vertex_edges)
+	def single_edge_trees(vertex_edges)
 		tree = vertex_edges.clone
 		single_edge_trees = []
 		tree.each do |k,v|
@@ -279,11 +281,11 @@ class Tree
 		single_edge_trees
 	end
 
-	def self.min_number_edges(total_vertices)
+	def min_number_edges(total_vertices)
 		total_vertices - 1
 	end
 
-	def self.unrooted_internal_vertices(number_leaves)
+	def unrooted_internal_vertices(number_leaves)
 		number_leaves - 2
 	end
 end
